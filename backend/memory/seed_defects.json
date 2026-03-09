@@ -1,0 +1,14 @@
+[
+ {
+  "module": "login",
+  "defect": "Login fails with special characters"
+ },
+ {
+  "module": "login",
+  "defect": "Account locks after multiple failed attempts"
+ },
+ {
+  "module": "payment",
+  "defect": "Payment fails when network is slow"
+ }
+]
