@@ -27,7 +27,9 @@ def analyze_story(story_text):
 
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[
+            {"role": "system", "content": "You extract structured data from user stories."},
+            {"role": "user", "content": prompt}]
     )
 
     result = response.choices[0].message.content.strip()
@@ -36,4 +38,12 @@ def analyze_story(story_text):
     if result.startswith("```"):
         result = result.replace("```json", "").replace("```", "").strip()
 
-    return json.loads(result)
+    try:
+        return json.loads(result)
+    except json.JSONDecodeError:
+        return {
+            "actor": "",
+            "action": "",
+            "inputs": [],
+            "expected": ""
+        }

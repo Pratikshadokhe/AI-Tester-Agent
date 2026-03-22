@@ -25,6 +25,8 @@ def generate_tests(story, defects):
     - positive tests
     - negative tests
     - edge cases
+
+    Return JSON list with severity
     """
 
     response = client.chat.completions.create(

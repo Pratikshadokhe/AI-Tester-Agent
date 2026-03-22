@@ -1,0 +1,19 @@
+{
+  "severity_weights": {
+    "critical": 5,
+    "high": 4,
+    "medium": 2,
+    "low": 1
+  },
+  "module_weights": {
+    "payment": 5,
+    "authentication": 4,
+    "core": 3,
+    "integration": 3,
+    "ui": 1
+  },
+  "risk_thresholds": {
+    "high": 12,
+    "medium": 6
+  }
+}
