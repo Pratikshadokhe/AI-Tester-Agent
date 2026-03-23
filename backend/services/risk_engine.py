@@ -11,7 +11,7 @@
 import json
 
 class RiskEngine:
-    def __init__(self, config_path = "backend\memory\risk_config.json"):
+    def __init__(self, config_path = "memory/risk_config.json"):
         with open(config_path) as f:
             self.config = json.load(f)
 
@@ -54,3 +54,13 @@ class RiskEngine:
             risk = "MEDIUM"
         else:
             risk = "LOW"
+
+        max_score = thresholds["high"]+5
+        confidence = min(score/max_score, 1.0)
+
+        return {
+            "risk": risk,
+            "score": score,
+            "confidence": confidence,
+            "reasons": reasons
+        }

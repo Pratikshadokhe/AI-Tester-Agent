@@ -22,7 +22,7 @@ class VectorMemory:
         self.memory.append(defect)
     
 
-    def search(self, query, top_k = 3):
+    def search(self, query, top_k = 5):
         if len(self.memory) == 0:
             return []
         
@@ -33,8 +33,13 @@ class VectorMemory:
 
         results = []
 
-        for i in indexes[0]:
+        for i, dist in zip(indexes[0], distances[0]):
             if i < len(self.memory):
-                results.append(self.memory[i])
+                defect = self.memory[i].copy()
+
+                # convert distance to similarity
+                similarity = 1 / (1+float(dist))
+                defect["similarity"] = float(similarity)
+                results.append(defect)
 
         return results
