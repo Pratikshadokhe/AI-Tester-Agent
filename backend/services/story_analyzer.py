@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from groq import Groq
 import json
+import re
 
 load_dotenv()
 
@@ -35,8 +36,13 @@ def analyze_story(story_text):
     result = response.choices[0].message.content.strip()
     print("Raw llm output: ", result)
 
+    # match = re.search(r"\{.*\}", result, re.DOTALL)
+    # if match:
+    #     result = match.group()
     if result.startswith("```"):
         result = result.replace("```json", "").replace("```", "").strip()
+
+    print("Cleaned story analysis json: ", result)
 
     try:
         return json.loads(result)

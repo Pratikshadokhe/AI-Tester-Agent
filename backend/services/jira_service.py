@@ -17,11 +17,17 @@ class JiraService:
         }
 
     def get_issue(self, issue_key):
-        url = f"{self.base_url}/rest/api/3/search/jql?jql=issue=IPS2-20&fields=summary,description"
+        url = f"{self.base_url}/rest/api/3/search/jql?jql=key={issue_key}&fields=summary,description"
+
+        # params = {
+        #     "jql": f"key={issue_key}",
+        #     "fields": "summary,description"
+        # }
 
         response = requests.get(url, headers=self.headers, auth=self.auth)
 
         print("Final URL: ", response.url)
+        print("Response:", response.text)
 
         if response.status_code != 200:
             print("Status: ", response.status_code)
@@ -43,8 +49,8 @@ class JiraService:
             return {"summary": "", "description": ""}
 
         # fields = data.get("fields", {})
-        fields = issues[0]["fields"]
-
+        fields = issues[0].get("fields", {})
+        
         summary = fields.get("summary", "")
         description = fields.get("description", "")
 

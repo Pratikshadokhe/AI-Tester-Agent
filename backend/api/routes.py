@@ -1,3 +1,5 @@
+import random
+import time
 from fastapi import APIRouter
 from services.story_analyzer import analyze_story
 from services.risk_engine import RiskEngine
@@ -9,6 +11,8 @@ from services.vector_memory import VectorMemory
 from services.pattern_engine import PatternEngine
 
 from services.llm_summary import generate_summary
+
+from services.test_executor import execute_tests
 
 from services.jira_service import JiraService
 
@@ -133,6 +137,7 @@ def generate_tests_api(data: dict):
 
     return {
         "analysis": analysis,
+        "User_Story_Title": summary,
         "defects": all_defects,
         "risk": risk,
 
@@ -173,3 +178,77 @@ def generate_tests_api(data: dict):
 def fetch_jira(issue_key:str):
     jira_service = JiraService()
     return jira_service.get_issue(issue_key)
+
+@router.post("/execute-tests")
+def execute_tests_api(data: dict = {}):
+    """
+    Execute generated test cases (dummy/simulated execution).
+    If `story` or `jira_id` is provided, it will fetch test cases first.
+    """
+
+    test_cases = []
+    summary = ""
+    description = ""
+
+    if "jira_id" in data:
+        jira_service = JiraService()
+        jira_data = jira_service.get_issue(data["jira_id"])
+        if "error" in jira_data:
+            return {"error": "Jira fetch failed", "details": jira_data}
+        summary = jira_data.get("summary", "")
+        description = jira_data.get("description", "")
+        story = f"Feature: {summary}\nDescription: {description}"
+    else:
+        story = data.get("story", "")
+
+    defects = generate_defects(story)
+    for d in defects:
+        memory.store(d)
+
+   
+    tests = generate_tests(summary=summary, description=description, defects=defects)
+    test_cases = tests if tests else []
+
+    
+    executed_cases = []
+    
+    fail_index = random.randint(0, len(test_cases) - 1)
+
+    for i, tc in enumerate(test_cases):
+        # Simulated pass/fail
+        fail_index = random.randint(0, len(test_cases) - 1)  # random failing test
+        status = "fail" if i == fail_index else "pass"
+        duration_ms = random.randint(100, 800)
+        error = None
+        screenshot = None
+
+        if status == "fail":
+            error = f"AssertionError: Expected result for {tc.get('title')} not met"
+            screenshot = f"screenshot_{tc.get('id', i)}.png"
+
+        steps_result = []
+        for step in tc.get("steps", []):
+            step_status = "fail" if status == "fail" and random.random() < 0.3 else "pass"
+            step_duration = random.randint(20, 200)
+            steps_result.append({
+                "step": step,
+                "status": step_status,
+                "duration_ms": step_duration
+            })
+
+        executed_cases.append({
+            **tc,
+            "status": status,
+            "duration_ms": duration_ms,
+            "error": error,
+            "screenshot": screenshot,
+            "steps_result": steps_result
+        })
+
+    execution_id = f"exec_{int(time.time())}"
+
+    return {
+        "execution_id": execution_id,
+        "started_at": time.time(),
+        "test_cases": executed_cases
+    }
