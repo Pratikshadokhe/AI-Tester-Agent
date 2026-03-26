@@ -10,6 +10,8 @@ from services.pattern_engine import PatternEngine
 
 from services.llm_summary import generate_summary
 
+from services.jira_service import JiraService
+
 router = APIRouter()
 
 memory = VectorMemory()
@@ -27,7 +29,30 @@ def analyze(story: dict):
 
 @router.post("/generate-tests")
 def generate_tests_api(data: dict):
-    story = data["story"]
+    # story = data["story"]
+
+    # extracting stories from JIRA tool
+    jira_service = JiraService()
+
+    jira_data = {}
+    if "jira_id" in data:
+        jira_data = jira_service.get_issue(data["jira_id"])
+        if "error" in jira_data:
+            return{
+                "error": "Jira fetch failed",
+                "details": jira_data
+            }
+        summary = jira_data.get("summary", "")
+        description = jira_data.get("description", "")
+        story = f"""
+        Feature: {summary}
+        Description: {description}
+        """
+    else:
+        summary = ""
+        description = ""
+        story = data.get("story", "")
+    # -end- #
 
     analysis = analyze_story(story)
 
@@ -38,7 +63,16 @@ def generate_tests_api(data: dict):
         memory.store(d)
 
     # query = story + " " + analysis.get("action", "")
-    query = f"{story} {analysis.get('action', '')} defects bugs failure edge cases"
+    query = f"""
+    {summary} {description} 
+    Action: {analysis.get('action', '')} 
+    Focus: defects, bugs, failures, edge cases, negative scenarios, boundary testing
+    """
+
+    print("SUMMARY: ", summary)
+    print("DESCRIPTION: ", description)
+
+    
     # memory_defects = memory.search(analysis["action"])
     # memory_defects = memory.search(query, top_k=5)
     raw_memory = memory.search(query, top_k=5)
@@ -89,7 +123,11 @@ def generate_tests_api(data: dict):
     if risk["risk"] == "HIGH":
             high_risk_modules.append(analysis["action"])
 
-    tests = generate_tests(story, all_defects)
+    tests = generate_tests(
+        summary = summary,
+        description=description,
+        defects=all_defects
+    )
 
     summary_text = generate_summary(story, risk)
 
@@ -130,3 +168,8 @@ def generate_tests_api(data: dict):
 
         "tests": tests
     }
+
+@router.get("/jira/{issue_key}")
+def fetch_jira(issue_key:str):
+    jira_service = JiraService()
+    return jira_service.get_issue(issue_key)
