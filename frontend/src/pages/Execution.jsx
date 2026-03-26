@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { mockApi } from '../api/api';
 import TestTable from '../components/TestTable';
 import { Play, Square, CheckCircle2, XCircle, Clock, Zap, AlertCircle, Terminal } from 'lucide-react';
+import { api } from '../api/api';
 
 function ProgressBar({ current, total, isRunning }) {
   const pct = total > 0 ? Math.round((current / total) * 100) : 0;
@@ -41,6 +42,8 @@ export default function Execution() {
   const [error, setError] = useState(null);
   const logRef = useRef(null);
 
+  const jiraId = localStorage.getItem("jiraId");
+
   const addLog = (text, type = 'info') => {
     const time = new Date().toLocaleTimeString('en', { hour12: false });
     setLog(l => [...l.slice(-100), { text, type, time, id: Date.now() + Math.random() }]);
@@ -61,7 +64,10 @@ export default function Execution() {
     addLog('Connecting to test runner', 'info');
 
     try {
-      const data = await mockApi.executeTests();
+      
+      const data = await api.executeTests({
+        jira_id: jiraId
+      });
       const total = data.test_cases.length;
       setProgress({ current: 0, total });
 
@@ -122,7 +128,12 @@ export default function Execution() {
             </div>
             <div>
               <h2 className="section-header">Test Execution</h2>
-              <p className="text-xs text-text-muted font-mono">Run your generated test suite</p>
+              {jiraId && (
+                  <p className="text-xs font-mono text-accent">
+                    Running for Jira: {jiraId}
+                  </p>
+                )}
+              <p className="text-xs text-text-muted font-mono">Running your generated test suite</p>
             </div>
           </div>
 
@@ -222,8 +233,8 @@ export default function Execution() {
             </div>
           ) : (
             <div className="h-64 overflow-y-auto space-y-1.5">
-              {testCases.map(tc => (
-                <div key={tc.id} className={`flex items-center gap-3 px-3 py-2 rounded-lg border transition-all ${
+              {testCases.map((tc, index) => (
+                <div key={tc.id || index} className={`flex items-center gap-3 px-3 py-2 rounded-lg border transition-all ${
                   tc.status === 'pass' ? 'bg-neon-dim border-neon/20' :
                   tc.status === 'fail' ? 'bg-warn-dim border-warn/20' :
                   tc.status === 'running' ? 'bg-accent-glow border-accent/30' :

@@ -20,6 +20,10 @@ export const api = {
   executeTests: (payload) =>
     request('/execute-tests', { method: 'POST', body: JSON.stringify(payload || {}) }),
 
+  fetchJiraIssue: (issueKey) =>
+    request('/generate-tests', { method: 'POST', body: JSON.stringify({jira_id: issueKey})
+  }),
+
   getReports: () =>
     request('/reports'),
 

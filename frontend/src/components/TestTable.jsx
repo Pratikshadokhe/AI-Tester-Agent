@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Circle, AlertTriangle } from 'lucide-react';
+import React from 'react';
 
 function PriorityTag({ priority }) {
   const map = {
@@ -86,17 +87,14 @@ export default function TestTable({ testCases = [], showSteps = false, showError
         </thead>
         <tbody className="divide-y divide-border">
           {testCases.map((tc) => (
-            <>
+            <React.Fragment key={tc.id}>
               <tr
-                key={tc.id}
                 className="table-row-hover cursor-pointer"
                 onClick={() => setExpanded(expanded === tc.id ? null : tc.id)}
               >
                 <td className="pl-3 pr-1 py-3">
                   <button className="text-text-muted hover:text-text-secondary transition-colors">
-                    {expanded === tc.id
-                      ? <ChevronDown size={14} />
-                      : <ChevronRight size={14} />}
+                    {expanded === tc.id ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </button>
                 </td>
                 <td className="px-4 py-3">
@@ -109,7 +107,7 @@ export default function TestTable({ testCases = [], showSteps = false, showError
                   <span className="font-mono text-xs text-text-muted bg-muted px-2 py-0.5 rounded">{tc.category}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <PriorityTag priority={tc.priority} />
+                  <PriorityTag priority={tc.category} />
                 </td>
                 <td className="px-4 py-3">
                   <StatusBadge status={tc.status} />
@@ -124,7 +122,7 @@ export default function TestTable({ testCases = [], showSteps = false, showError
               </tr>
 
               {expanded === tc.id && (
-                <tr key={`${tc.id}-detail`} className="bg-void/40">
+                <tr className="bg-void/40">
                   <td colSpan={showSteps ? 7 : 6} className="px-5 pb-4 pt-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -161,7 +159,7 @@ export default function TestTable({ testCases = [], showSteps = false, showError
                   </td>
                 </tr>
               )}
-            </>
+            </React.Fragment>
           ))}
         </tbody>
       </table>
