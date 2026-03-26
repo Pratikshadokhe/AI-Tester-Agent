@@ -123,11 +123,13 @@
   }
 
   .section-header {
-    @apply font-display font-semibold text-lg text-text-primary tracking-tight;
+    @apply font-display font-semibold text-lg tracking-tight;
+    color: #ffffff;
   }
 
   .label {
-    @apply text-xs font-display font-semibold uppercase tracking-widest text-text-muted;
+    @apply text-xs font-display font-semibold uppercase tracking-widest;
+    color: #7070a0;
   }
 }
 

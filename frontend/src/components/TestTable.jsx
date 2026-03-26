@@ -103,7 +103,7 @@ export default function TestTable({ testCases = [], showSteps = false, showError
                   <span className="font-mono text-xs text-accent">{tc.id}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-text-primary font-body">{tc.title}</span>
+                  <span className="text-white font-body">{tc.title}</span>
                 </td>
                 <td className="px-4 py-3">
                   <span className="font-mono text-xs text-text-muted bg-muted px-2 py-0.5 rounded">{tc.category}</span>
