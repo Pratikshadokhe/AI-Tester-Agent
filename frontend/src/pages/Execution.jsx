@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { mockApi } from '../api/api';
 import TestTable from '../components/TestTable';
 import { Play, Square, CheckCircle2, XCircle, Clock, Zap, AlertCircle, Terminal } from 'lucide-react';
 import { api } from '../api/api';
+import { data } from 'framer-motion/client';
+import toast from 'react-hot-toast'
 
 function ProgressBar({ current, total, isRunning }) {
   const pct = total > 0 ? Math.round((current / total) * 100) : 0;
@@ -34,7 +35,7 @@ function LogLine({ text, type = 'info', time }) {
 }
 
 export default function Execution() {
-  const [status, setStatus] = useState('idle'); // idle | running | done
+  const [status, setStatus] = useState('idle');
   const [testCases, setTestCases] = useState([]);
   const [log, setLog] = useState([]);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
@@ -55,6 +56,7 @@ export default function Execution() {
 
   const runExecution = async () => {
     setStatus('running');
+    toast.loading("Starting test execution...");
     setError(null);
     setLog([]);
     setSummary(null);
@@ -65,45 +67,94 @@ export default function Execution() {
 
     try {
       
-      const data = await api.executeTests({
-        jira_id: jiraId
-      });
-      const total = data.test_cases.length;
-      setProgress({ current: 0, total });
+      const data = await api.executeTests(jiraId);
 
-      addLog(`Loaded ${total} test cases`, 'system');
-      addLog(`Execution ID: ${data.execution_id}`, 'info');
-      addLog('Starting test suite...', 'system');
+        toast.dismiss();
+        toast.success("Connected to backend successfully 🚀");
 
-      const runningCases = data.test_cases.map(tc => ({ ...tc, status: 'pending' }));
-      setTestCases(runningCases);
+const total = data.test_cases.length;
+setProgress({ current: 0, total });
+
+addLog(`Loaded ${total} test cases`, 'system');
+toast.success(`${total} test cases loaded ✅`);
+addLog(`Execution ID: ${data.execution_id}`, 'info');
+addLog('Starting test suite...', 'system');
+  
+ const runningCases = data.test_cases.map((tc, index) => { 
+        const text = (tc.title + " " + (tc.steps || []).join(" ")).toLowerCase();
+
+        let category = "general";
+        if (text.includes("upload") || text.includes("file")) category = "upload";
+        else if (text.includes("search")) category = "search";
+        else if (text.includes("data") || text.includes("catalogue")) category = "data";
+        else if (text.includes("api")) category = "api";
+
+        let priority = "medium";
+
+        if (text.includes("fail") || text.includes("error")) priority = "high";
+        if (text.includes("critical")) priority = "critical";
+
+        return {
+          ...tc,
+          id: tc.id || `TC-${index + 1}`,
+          category,       
+          priority,       
+          status: 'pending'
+        };
+    });
+
+setTestCases(runningCases);
 
       for (let i = 0; i < data.test_cases.length; i++) {
         const tc = data.test_cases[i];
-        // Set current to running
-        setTestCases(prev => prev.map((t, idx) => idx === i ? { ...t, status: 'running' } : t));
+
+        setTestCases(prev =>
+          prev.map((t, idx) =>
+            idx === i ? { ...t, status: 'running' } : t
+          )
+        );
+
         addLog(`Running: ${tc.title}`, 'info');
 
-        await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
+        await new Promise(r => setTimeout(r, 500));
 
-        setTestCases(prev => prev.map((t, idx) => idx === i ? { ...tc } : t));
-        setProgress({ current: i + 1, total });
+        setTestCases(prev =>
+          prev.map((t, idx) =>
+            idx === i ? {...t, ...tc} : t
+          )
+        );
+
+        setProgress({ current: i + 1, total: data.test_cases.length });
 
         if (tc.status === 'pass') {
-          addLog(`PASS: ${tc.title} (${tc.duration_ms}ms)`, 'pass');
+          addLog(`PASS: ${tc.title}`, 'pass');
         } else {
-          addLog(`FAIL: ${tc.title} — ${tc.error}`, 'fail');
+          addLog(`FAIL: ${tc.title}`, 'fail');
         }
       }
 
       const passed = data.test_cases.filter(t => t.status === 'pass').length;
       const failed = data.test_cases.filter(t => t.status === 'fail').length;
-      setSummary({ passed, failed, total, duration: '4.2s' });
-      addLog(`Suite complete: ${passed} passed, ${failed} failed`, 'system');
+
+      setSummary({
+        passed,
+        failed,
+        total: data.test_cases.length,
+        duration: '3s'
+      });
+      
+
+      addLog(`Completed: ${passed} passed, ${failed} failed`, 'system');
       setStatus('done');
+      toast.success(`Execution Completed 🎉`);
+
     } catch (e) {
       setError(e.message);
-      addLog(`Fatal error: ${e.message}`, 'fail');
+      addLog(`Error: ${e.message}`, 'fail');
+
+      toast.dismiss();
+      toast.error(e.message || "Execution failed ❌");
+
       setStatus('idle');
     }
   };
@@ -115,6 +166,7 @@ export default function Execution() {
     setSummary(null);
     setError(null);
     setProgress({ current: 0, total: 0 });
+    toast("Execution reset 🔄");
   };
 
   return (

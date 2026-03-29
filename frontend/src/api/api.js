@@ -1,132 +1,135 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+// toggle for demo
+const USE_MOCK = true;
+
+
 async function request(path, options = {}) {
   const url = `${BASE_URL}${path}`;
+
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
     ...options,
   });
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
     throw new Error(err.detail || `HTTP ${res.status}`);
   }
+
   return res.json();
 }
 
 export const api = {
+  // ✅ Generate Tests
   generateTests: (payload) =>
-    request('/generate-tests', { method: 'POST', body: JSON.stringify(payload) }),
+    request('/generate-tests', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
-  executeTests: (payload) =>
-    request('/execute-tests', { method: 'POST', body: JSON.stringify(payload || {}) }),
+  // Execute Tests (FIXED RESPONSE FORMAT)
+    executeTests: (issueKey) =>
+    request('/execute-tests', {
+      method: 'POST',
+      body: JSON.stringify({ jira_id: issueKey }),
+    }),
 
+  // ✅ Fetch Jira Issue
   fetchJiraIssue: (issueKey) =>
-    request('/generate-tests', { method: 'POST', body: JSON.stringify({jira_id: issueKey})
-  }),
+    request('/generate-tests', {
+      method: 'POST',
+      body: JSON.stringify({ jira_id: issueKey }),
+    }),
 
-  getReports: () =>
-    request('/reports'),
+  // ✅ Dashboard (mock if toggle true)
+  getDashboard: async () => {
+    if (USE_MOCK) return mockApi.getDashboard();
+    return request('/dashboard');
+  },
 
-  getDashboard: () =>
-    request('/dashboard'),
+  // ✅ Reports (mock if toggle true)
+  getReports: async () => {
+    if (USE_MOCK) return mockApi.getReports();
+    return request('/reports');
+  },
+
+  // ✅ NEW: Run directly from JIRA
+  runFromJira: async (issueKey) => {
+    if (USE_MOCK) return mockApi.executeTests();
+
+    const res = await request('/run-from-jira', {
+      method: 'POST',
+      body: JSON.stringify({ issue_key: issueKey }),
+    });
+
+    return res;
+    
+  },
+
+  // getReports: () => request('/reports'),
+  // getDashboard: () => request('/dashboard'),
 };
 
-// ── Mock helpers for standalone demo ──────────────────────────────────────────
+// ---------------- MOCK ----------------
+// ---------------- MOCK FOR DASHBOARD / REPORTS ----------------
 function delay(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-const MOCK_TEST_CASES = [
-  { id: 'TC-001', title: 'User login with valid credentials', priority: 'critical', category: 'Auth', steps: ['Navigate to /login', 'Enter valid email', 'Enter valid password', 'Click Login'], expected: 'Redirected to dashboard', status: null },
-  { id: 'TC-002', title: 'User login with invalid password', priority: 'high', category: 'Auth', steps: ['Navigate to /login', 'Enter valid email', 'Enter wrong password', 'Click Login'], expected: 'Error message shown', status: null },
-  { id: 'TC-003', title: 'Password reset email flow', priority: 'high', category: 'Auth', steps: ['Click Forgot Password', 'Enter registered email', 'Submit form'], expected: 'Email sent confirmation', status: null },
-  { id: 'TC-004', title: 'Form validation on empty submit', priority: 'medium', category: 'Validation', steps: ['Navigate to form', 'Leave all fields blank', 'Click Submit'], expected: 'Validation errors shown', status: null },
-  { id: 'TC-005', title: 'Session expiry after inactivity', priority: 'medium', category: 'Security', steps: ['Login', 'Wait 30 min', 'Try to access protected page'], expected: 'Redirected to login', status: null },
-  { id: 'TC-006', title: 'Rate limiting on login attempts', priority: 'low', category: 'Security', steps: ['Attempt login 5+ times with wrong credentials'], expected: 'Account locked message', status: null },
-];
-
-export const mockApi = {
-  generateTests: async (payload) => {
-    await delay(2200);
+const mockApi = {
+  getDashboard: async () => {
+    await delay(500);
     return {
-      story_title: payload.title,
-      test_cases: MOCK_TEST_CASES.map(tc => ({ ...tc })),
-      generated_at: new Date().toISOString(),
-      risk_score: 68,
-    };
-  },
-
-  executeTests: async () => {
-    await delay(800);
-    return {
-      execution_id: `exec_${Date.now()}`,
-      started_at: new Date().toISOString(),
-      test_cases: MOCK_TEST_CASES.map((tc, i) => ({
-        ...tc,
-        status: i % 5 === 4 ? 'fail' : 'pass',
-        duration_ms: Math.floor(Math.random() * 800) + 100,
-        error: i % 5 === 4 ? 'AssertionError: Expected redirect but got 403' : null,
-        screenshot: i % 5 === 4 ? `screenshot_${tc.id}.png` : null,
-        steps_result: tc.steps.map((step, si) => ({
-          step,
-          status: (i % 5 === 4 && si === tc.steps.length - 1) ? 'fail' : 'pass',
-          duration_ms: Math.floor(Math.random() * 200) + 20,
-        })),
-      })),
+      total_tests: 11,
+      passed: 8,
+      failed: 3,
+      risk_score: 72,
+      trend: [
+        { label: 'Mon', passed: 5, failed: 1 },
+        { label: 'Tue', passed: 7, failed: 2 },
+        { label: 'Wed', passed: 6, failed: 3 },
+      ],
+      categories: { functional: 4, validation: 1, integration: 6 },
+      recent_runs: [
+        { id: 'exec_001', timestamp: '2026-03-29 14:32', passed: 8, failed: 3, duration: '5.2s' },
+        { id: 'exec_002', timestamp: '2026-03-28 09:15', passed: 9, failed: 2, duration: '4.8s' },
+      ],
     };
   },
 
   getReports: async () => {
     await delay(600);
     return {
-      total: 6,
-      passed: 5,
-      failed: 1,
+      total: 11,
+      passed: 8,
+      failed: 3,
       skipped: 0,
-      pass_rate: 83.3,
-      risk_score: 68,
-      regression_alerts: [
-        { id: 'RA-001', message: 'TC-005 regressed from last run', severity: 'high', detected_at: new Date().toISOString() },
-      ],
+      pass_rate: 72.7,
+      risk_score: 72,
       history: [
-        { date: '2024-03-01', passed: 20, failed: 3 },
-        { date: '2024-03-05', passed: 22, failed: 1 },
-        { date: '2024-03-10', passed: 19, failed: 4 },
-        { date: '2024-03-15', passed: 24, failed: 2 },
-        { date: '2024-03-20', passed: 26, failed: 1 },
-        { date: '2024-03-25', passed: 5, failed: 1 },
+      { date: '2026-03-27', passed: 3, failed: 2 },
+      { date: '2026-03-28', passed: 5, failed: 1 },
+      { date: '2026-03-29', passed: 8, failed: 3 },
+    ],
+      regression_alerts: [
+        { id: 'RA-001', message: 'TC-003 regressed from last run', severity: 'high', detected_at: new Date().toISOString() },
       ],
-      test_cases: MOCK_TEST_CASES.map((tc, i) => ({
-        ...tc,
-        status: i % 5 === 4 ? 'fail' : 'pass',
-        duration_ms: Math.floor(Math.random() * 800) + 100,
-        error: i % 5 === 4 ? 'AssertionError: Expected redirect but got 403' : null,
-        screenshot: i % 5 === 4 ? `https://via.placeholder.com/640x360/1a1a2e/6c63ff?text=Screenshot+${tc.id}` : null,
-      })),
-    };
-  },
-
-  getDashboard: async () => {
-    await delay(500);
-    return {
-      total_tests: 6,
-      passed: 5,
-      failed: 1,
-      risk_score: 68,
-      trend: [
-        { label: 'Mon', passed: 18, failed: 4 },
-        { label: 'Tue', passed: 22, failed: 2 },
-        { label: 'Wed', passed: 20, failed: 5 },
-        { label: 'Thu', passed: 25, failed: 1 },
-        { label: 'Fri', passed: 23, failed: 3 },
-        { label: 'Sat', passed: 28, failed: 1 },
-        { label: 'Sun', passed: 5, failed: 1 },
-      ],
-      categories: { Auth: 3, Validation: 1, Security: 2 },
-      recent_runs: [
-        { id: 'exec_001', timestamp: '2024-03-25 14:32', passed: 5, failed: 1, duration: '4.2s' },
-        { id: 'exec_002', timestamp: '2024-03-24 09:15', passed: 6, failed: 0, duration: '3.8s' },
-        { id: 'exec_003', timestamp: '2024-03-23 16:44', passed: 4, failed: 2, duration: '5.1s' },
+      test_cases: [
+        { id: 'TC-001', title: 'Valid BOQ Generation', category: 'functional', priority: 'low', status: 'pending' },
+        { id: 'TC-002', title: 'Invalid Input Components Format', category: 'validation', priority: 'medium', status: 'pending' },
+        { id: 'TC-003', title: 'Un-handled Error for Non-existent Catalogue Entries', category: 'integration', priority: 'high', status: 'pending' },
+        { id: 'TC-004', title: 'Catastrophic Failure in BOQ Generation', category: 'integration', priority: 'critical', status: 'pending' },
+        { id: 'TC-005', title: 'Precision Loss in Cost Calculation', category: 'functional', priority: 'medium', status: 'pending' },
+        { id: 'TC-006', title: 'Lack of Version Control for Catalogue Database', category: 'integration', priority: 'high', status: 'pending' },
+        { id: 'TC-007', title: 'Inability to Handle Large Volumes of Component Data', category: 'functional', priority: 'medium', status: 'pending' },
+        { id: 'TC-008', title: 'Insufficient Logging for BOQ Generation Errors', category: 'integration', priority: 'low', status: 'pending' },
+        { id: 'TC-009', title: 'Non-standardised Output Format', category: 'integration', priority: 'medium', status: 'pending' },
+        { id: 'TC-010', title: 'Failure to Handle Multiple Units of Measurement', category: 'functional', priority: 'medium', status: 'pending' },
+        { id: 'TC-011', title: 'Possible Security Vulnerability in Catalogue Database', category: 'integration', priority: 'high', status: 'pending' },
       ],
     };
   },

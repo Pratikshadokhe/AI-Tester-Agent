@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Circle, AlertTriangle } from 'lucide-react';
 import React from 'react';
 
+
 function PriorityTag({ priority }) {
   const map = {
     critical: 'tag-critical',
@@ -59,6 +60,8 @@ function StepList({ steps, stepsResult }) {
 export default function TestTable({ testCases = [], showSteps = false, showError = false }) {
   const [expanded, setExpanded] = useState(null);
 
+  console.log("Test Cases in Test-Table: ",testCases);
+
   if (!testCases.length) {
     return (
       <div className="glass-card p-12 text-center">
@@ -86,8 +89,8 @@ export default function TestTable({ testCases = [], showSteps = false, showError
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {testCases.map((tc) => (
-            <React.Fragment key={tc.id}>
+          {testCases.map((tc, index) => (
+            <React.Fragment key={tc.id || index}>
               <tr
                 className="table-row-hover cursor-pointer"
                 onClick={() => setExpanded(expanded === tc.id ? null : tc.id)}
@@ -101,13 +104,13 @@ export default function TestTable({ testCases = [], showSteps = false, showError
                   <span className="font-mono text-xs text-accent">{tc.id}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-text-primary font-body">{tc.title}</span>
+                  <span className="text-white font-body">{tc.title}</span>
                 </td>
                 <td className="px-4 py-3">
                   <span className="font-mono text-xs text-text-muted bg-muted px-2 py-0.5 rounded">{tc.category}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <PriorityTag priority={tc.category} />
+                  <PriorityTag priority={tc.severity} />
                 </td>
                 <td className="px-4 py-3">
                   <StatusBadge status={tc.status} />
@@ -115,7 +118,9 @@ export default function TestTable({ testCases = [], showSteps = false, showError
                 {showSteps && (
                   <td className="px-4 py-3">
                     <span className="font-mono text-xs text-text-muted">
-                      {tc.duration_ms ? `${tc.duration_ms}ms` : '—'}
+                      {tc.duration_ms || tc.result?.duration_ms
+  ? `${tc.duration_ms || tc.result?.duration_ms}ms`
+  : '—'}
                     </span>
                   </td>
                 )}

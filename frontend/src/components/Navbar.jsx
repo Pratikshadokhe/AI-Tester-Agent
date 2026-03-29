@@ -2,7 +2,8 @@ import { useLocation } from 'react-router-dom';
 import { Bell, Search, Settings, RefreshCw } from 'lucide-react';
 
 const PAGE_LABELS = {
-  '/': 'Dashboard',
+  '/': 'Home',
+  '/dashboard': 'Dashboard',
   '/generate': 'Generate Tests',
   '/execution': 'Execution',
   '/reports': 'Reports',
@@ -13,7 +14,7 @@ export default function Navbar({ onRefresh, isLoading }) {
   const title = PAGE_LABELS[location.pathname] || 'AI Tester Agent';
 
   return (
-    <header className="fixed top-0 left-56 right-0 h-14 bg-surface/80 border-b border-border z-30 flex items-center px-6 gap-4"
+    <header className="sticky top-0 h-14 bg-surface/90 border-b border-border z-30 flex items-center px-6 gap-4 w-full"
       style={{ backdropFilter: 'blur(12px)' }}>
       {/* Page title */}
       <div className="flex-1">

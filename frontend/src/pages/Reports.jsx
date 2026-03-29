@@ -4,7 +4,7 @@ import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
   LineElement, BarElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
-import { mockApi } from '../api/api';
+import { api } from '../api/api';
 import TestTable from '../components/TestTable';
 import ResultCard from '../components/ResultCard';
 import {
@@ -98,7 +98,7 @@ export default function Reports() {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    mockApi.getReports().then(d => { setData(d); setLoading(false); });
+    api.getReports().then(d => { setData(d); setLoading(false); });
   }, []);
 
   if (loading) return (

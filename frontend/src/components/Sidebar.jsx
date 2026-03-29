@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FlaskConical, Play, FileBarChart2,
-  Bot, ChevronRight, Activity, Zap
+  Bot, ChevronRight, Activity, Zap, Home
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
+  { to: '/', icon: Home, label: 'Home', end: true },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/generate', icon: FlaskConical, label: 'Generate Tests' },
   { to: '/execution', icon: Play, label: 'Execution' },
   { to: '/reports', icon: FileBarChart2, label: 'Reports' },
